@@ -47,9 +47,15 @@ def create_app(
     application.state.database_path = path
     application.state.golden_manifest_path = Path(golden_manifest_path)
     canvas_path = environ.get("SYMBIOSIS_X_MISSION_CANVAS")
+    # Opt-in public demo of synthetic data only (for example a Vercel preview).
+    hosted_demo = environ.get("SYMBIOSIS_X_HOSTED_DEMO") == "1"
     if enable_local_demo is None:
-        enable_local_demo = bool(canvas_path) or environ.get("SYMBIOSIS_X_LOCAL_DEMO") == "1"
-    application.state.demo_tokens = new_demo_tokens() if enable_local_demo else {}
+        enable_local_demo = bool(canvas_path) or hosted_demo or environ.get("SYMBIOSIS_X_LOCAL_DEMO") == "1"
+    application.state.hosted_demo = hosted_demo
+    application.state.demo_tokens = (
+        new_demo_tokens(environ.get("SYMBIOSIS_X_DEMO_SECRET") if hosted_demo else None)
+        if enable_local_demo else {}
+    )
     application.include_router(health_router)
     application.include_router(roles_router)
     application.include_router(runs_router)

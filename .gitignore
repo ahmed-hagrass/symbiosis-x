@@ -24,3 +24,8 @@ dist/
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+
+# Hosted build output
+/public/
+/.build-deps/
+/.vercel/

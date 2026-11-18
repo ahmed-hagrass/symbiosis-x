@@ -1,7 +1,10 @@
 """Server-issued credentials for the loopback mission pilot."""
 
+from hashlib import sha256
+from hmac import new as hmac_new
 from ipaddress import ip_address
 from secrets import compare_digest, token_urlsafe
+from urllib.parse import urlsplit
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -13,11 +16,26 @@ router = APIRouter(prefix="/api/v1/demo", tags=["demo"])
 bearer = HTTPBearer(auto_error=False)
 
 
-def new_demo_tokens() -> dict[Role, str]:
-    return {role: token_urlsafe(32) for role in ("facilitator", "crew", "ground")}
+def new_demo_tokens(secret: str | None = None) -> dict[Role, str]:
+    """Random tokens per process, or stable tokens derived from a hosted-demo secret.
+
+    A hosted demo may run several server instances; a shared secret keeps the
+    tokens one instance issues valid on the others.
+    """
+    roles: tuple[Role, ...] = ("facilitator", "crew", "ground")
+    if not secret:
+        return {role: token_urlsafe(32) for role in roles}
+    return {role: hmac_new(secret.encode(), role.encode(), sha256).hexdigest() for role in roles}
 
 
 def require_loopback(request: Request) -> None:
+    if getattr(request.app.state, "hosted_demo", False):
+        # Public synthetic demo: any visitor may switch viewpoints, but a
+        # browser may only call it from the page that the same host served.
+        origin = request.headers.get("origin")
+        if origin is not None and urlsplit(origin).netloc != request.headers.get("host"):
+            raise HTTPException(403, "ORIGIN_NOT_ALLOWED")
+        return
     host = request.url.hostname
     origin = request.headers.get("origin")
     try:
