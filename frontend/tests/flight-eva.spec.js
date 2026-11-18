@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
+import { hudButton } from "./support/hud.js";
 
 let directory;
 let flightHtml;
@@ -33,7 +34,7 @@ test("crew suits up, repairs antenna and returns once", async ({page}) => {
   const button = name => page.getByRole("button",{name,exact:true});
   const workflows = page.getByRole("dialog",{name:"Ship workflows"});
   const goToExterior = async () => {
-    await button("Workflows").click();
+    await (await hudButton(page, "Workflows")).click();
     await workflows.getByRole("button",{name:"Exterior inspection",exact:true}).click();
   };
   const advance = async count => {
@@ -91,7 +92,7 @@ test("crew suits up, repairs antenna and returns once", async ({page}) => {
   await expect(button("Verify safe return")).toBeHidden();
   await expect(workflows.locator("#eva-antenna-reading")).toContainText(caseId+"-antenna");
   await workflows.getByRole("button",{name:"Close",exact:true}).click();
-  await page.locator("#end-mission").click();
+  await (await hudButton(page, "#end-mission")).click();
   const debrief = page.getByRole("dialog",{name:"End this mission?"});
   await debrief.getByRole("button",{name:"End mission",exact:true}).click();
   await expect(page.locator("#end-mission-facts")).toContainText("2 → 8 dB · "+caseId+"-antenna");

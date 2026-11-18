@@ -1,0 +1,61 @@
+/* Flight HUD menus, camera breadcrumb and zoom transitions. */
+
+/* Readability: a larger top bar and crew card text no smaller than 11 px. */
+.ribbon{font-size:.88rem}
+.crew-portrait small{font-size:max(11px,.6rem)}
+.crew-portrait .crew-self-report{font-size:max(10.5px,.53rem);line-height:1.1}
+
+/* Top menus: one word each, a list that opens directly under it. */
+.hud-menus{display:inline-flex;align-items:center;gap:.25rem}
+.hud-menu{position:relative}
+.hud-menu[hidden]{display:none}
+.ribbon .hud-menu-trigger{background:transparent;color:var(--ink);padding:.38rem .62rem;border-radius:8px;gap:.4rem;font-weight:600;letter-spacing:.01em}
+.ribbon .hud-menu-trigger:hover,.hud-menu[data-open] .hud-menu-trigger{background:#22284d}
+.hud-caret{width:.62rem;height:.4rem;opacity:.75;transition:transform .18s ease}
+.hud-menu[data-open] .hud-caret{transform:rotate(180deg)}
+.hud-menu-list{position:absolute;left:50%;top:calc(100% + 6px);z-index:40;min-width:13.5rem;display:grid;gap:2px;padding:.4rem;
+  background:#0d1230f2;backdrop-filter:blur(12px);border:1px solid #9d9fff38;border-radius:12px;box-shadow:0 18px 40px #000a;
+  opacity:0;visibility:hidden;transform:translate(-50%,-4px);transition:opacity .14s ease,transform .14s ease,visibility 0s .14s}
+.hud-menu-list::before{content:"";position:absolute;left:0;right:0;top:-8px;height:8px}
+.hud-menu[data-open] .hud-menu-list{opacity:1;visibility:visible;transform:translate(-50%,0);transition:opacity .14s ease,transform .14s ease}
+.hud-menu-heading{margin:.35rem .55rem .15rem;font:600 .68rem/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hud-menu-heading:first-child{margin-top:.15rem}
+.ribbon .hud-menu-list button{width:100%;justify-content:flex-start;background:transparent;padding:.48rem .6rem;border-radius:8px;text-align:left;white-space:nowrap}
+.ribbon .hud-menu-list button:hover,.ribbon .hud-menu-list button:focus-visible{background:#262c58}
+.ribbon .hud-menu-list button[aria-pressed=true]{background:#3d315e}
+.ribbon .hud-menu-list .end-mission{color:#ffb3b3}
+.hud-menu-list .hud-room-item::before,.hud-menu-list .hud-crew-item::before{content:"";width:.5rem;height:.5rem;border-radius:50%;flex:none;background:var(--dot,#8fa6ff);box-shadow:0 0 0 3px #ffffff0d}
+.ribbon #show-flight-emergency:not([hidden]){background:#7c1d2c;color:#fff;font-weight:700}
+.ribbon #show-flight-emergency:not([hidden]):hover{background:#9b2435}
+.ribbon #flight-audio{background:transparent;padding:.38rem .5rem}
+
+/* Breadcrumb: where the camera is, and one click back. */
+.cam-crumbs{display:inline-flex;align-items:center;gap:.3rem;padding:.16rem .3rem .16rem .55rem;border-radius:999px;background:#0b1026;border:1px solid #9d9fff2e;color:var(--muted)}
+.cam-crumbs[hidden]{display:none}
+.cam-crumbs i{font-style:normal;opacity:.55}
+.cam-crumbs span{color:var(--ink);font-weight:600}
+.ribbon .cam-crumbs button{background:transparent;padding:.12rem .3rem;color:var(--blue)}
+.ribbon .cam-crumbs button:hover{background:#22284d}
+.ribbon .cam-crumbs .cam-back{margin-left:.2rem;background:#22284d;color:var(--ink);border-radius:999px;padding:.14rem .6rem}
+
+/* Camera: one transform on the cutaway; a smooth glide when it moves. */
+.stage .viewport{transform-origin:0 0;will-change:transform}
+.viewport.cam-smooth{transition:transform .8s cubic-bezier(.65,0,.35,1)}
+.viewport.cam-fade{animation:cam-fade .22s ease}
+@keyframes cam-fade{from{opacity:.25}to{opacity:1}}
+.cam-dim{position:absolute;inset:0;z-index:1;pointer-events:none;background:#04060fc4;backdrop-filter:blur(2.5px) saturate(.6);
+  clip-path:polygon(0 0,0 0,0 0);opacity:0;transition:opacity .45s ease}
+.ship[data-cam-room] .cam-dim{opacity:1}
+.ship[data-cam-room] .zone:not([data-cam-target]){opacity:.28;transition:opacity .45s ease}
+.ship .zone[data-cam-target]{box-shadow:inset 0 0 0 1.5px #9bdcffb0,0 0 28px #6fc6ff40;background:transparent}
+
+/* While the camera glides, the HUD steps back so nothing covers the ship. */
+.stage :is(.mission-resources,.crew-strip,.flight-controls,.overlays,#widget-shelf){transition:opacity .25s ease}
+body[data-cam-moving] .stage :is(.mission-resources,.crew-strip,.flight-controls,.overlays,#widget-shelf){opacity:.08}
+:is(.flight-corner,.mission-guide){transition:opacity .25s ease}
+body[data-cam-moving] :is(.flight-corner,.mission-guide){opacity:.08}
+
+@media (prefers-reduced-motion: reduce){
+  .viewport.cam-smooth{transition:none}
+  .hud-menu-list,.hud-caret,.cam-dim{transition:none}
+}

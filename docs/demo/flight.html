@@ -1174,6 +1174,7 @@ __HUD_ICONS__
 <section class="stage" id="stage" aria-label="Spacecraft in flight" hidden>
   <div class="hud"><div class="ribbon" aria-label="Flight navigation">
     <strong id="flight-mission-name" class="flight-mission-name"></strong>
+    <nav class="cam-crumbs" id="cam-crumbs" aria-label="Camera location" hidden></nav>
     <span class="resource"><svg class="icon" aria-hidden="true"><use href="#hud-map"/></svg><output id="resource-phase"></output></span>
     <button type="button" id="show-inspector" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#hud-activity"/></svg>Inspector</button>
     <button type="button" id="show-crew" aria-pressed="false" aria-controls="crew-widget"><svg class="icon" aria-hidden="true"><use href="#hud-users"/></svg>Crew roster</button>
@@ -2155,6 +2156,7 @@ __HUD_ICONS__
 </section>
 </main>
 <style>__HEALTH30_STYLE__</style>
+<style>__FLIGHT_CAMERA_STYLE__</style>
 <section id="health30" aria-label="30-second astronaut health demonstration" hidden></section>
 <script type="application/json" id="flight-data">__FLIGHT_DATA__</script>
 <script>
@@ -2164,6 +2166,8 @@ __FLIGHT_WIDGETS__
 __FLIGHT_STATIONS__
 __LAUNCH_SCENE__
 __FLIGHT_SOUND__
+__FLIGHT_CAMERA__
+__FLIGHT_HUD_MENUS__
 __FLIGHT_MISSIONS__
 __FLIGHT_DEMO__
 __FLIGHT_HEALTH_STORY__
@@ -4921,6 +4925,38 @@ function layoutHud() {
 const hudSize = new ResizeObserver(layoutHud);
 for (const control of [controller,crewStrip,flightRibbon,shelf,resources]) hudSize.observe(control);
 window.addEventListener("resize",layoutHud);
+// Camera (Ship › Room › Crew member) and the grouped top-bar menus.
+const flightCamera = bindFlightCamera({
+  stage:element("stage"), viewport:document.querySelector("#stage .viewport"), ship:element("ship"),
+  zones, rooms:data.rooms, roomButtons, pawns, names:characters.map(person=>person.name),
+  crumbs:element("cam-crumbs"), sound:window.sxSound,
+  top:()=>[flightRibbon,resources,crewStrip,controller].filter(Boolean),
+  blockers:()=>[missionOverview,orbitWidget,missionGuide,element("flight-instrument")].filter(node=>node && !node.hidden),
+  panels:()=>[...element("overlays").querySelectorAll(":scope > .panel:not([hidden])")],
+});
+function hudMenuItem(label, className, dot, onClick) {
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = className;
+  item.textContent = label;
+  if (dot) item.style.setProperty("--dot",dot);
+  item.addEventListener("click",onClick);
+  return item;
+}
+const hudMenus = bindFlightHudMenus({
+  ribbon:flightRibbon, sound:window.sxSound,
+  groups:[
+    {id:"mission", label:"Mission", sections:[{items:["show-briefing","show-command","show-orbit","show-missions","end-mission"].map(element)}]},
+    {id:"crew", label:"Crew", sections:[
+      {items:[element("show-crew")]},
+      {title:"Go to", items:duties.map((duty,i)=>hudMenuItem(characters[i].name,"hud-crew-item",duty.color,()=>pawns.get(i).click()))},
+    ]},
+    {id:"ship", label:"Ship", sections:[
+      {title:"Rooms", items:data.rooms.map(room=>hudMenuItem(room.name,"hud-room-item",null,()=>roomButtons.get(room.room_id).click()))},
+      {title:"Tools", items:["show-inspector","show-workflow","show-processes"].map(element)},
+    ]},
+  ],
+});
 let groundFlightContext;
 const campaignRelay = bindCampaignGround({
   find:element, clock,

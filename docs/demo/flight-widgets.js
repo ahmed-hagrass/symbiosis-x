@@ -18,7 +18,9 @@ function createFlightWidgets(overlay, shelf, notice, fixedControls = []) {
   // triggers. The flight overlay has a 100px top clearance, so ordinary
   // overlay-relative positioning makes a "dropdown" appear far away.
   const placeRibbonPopup = (entry, occupied, overlayBounds) => {
-    const trigger = entry.toggle.getBoundingClientRect();
+    // A trigger inside a top-bar menu anchors to that menu's word instead.
+    const anchor = entry.toggle.closest(".hud-menu")?.querySelector(".hud-menu-trigger") ?? entry.toggle;
+    const trigger = anchor.getBoundingClientRect();
     const panel = entry.panel;
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = document.documentElement.clientHeight;
@@ -35,7 +37,18 @@ function createFlightWidgets(overlay, shelf, notice, fixedControls = []) {
         if (xLeft >= gap) x = Math.min(x,xLeft);
         else y = Math.min(viewportHeight-140,dock.bottom+12);
       }
-      panel.style.maxHeight = Math.max(100,viewportHeight-y-12)+"px";
+      // Never open underneath the mission resources box.
+      const resources = document.getElementById("mission-resources")?.getBoundingClientRect();
+      if (resources?.width && x < resources.right+8 && x+panelWidth > resources.left-8 && y < resources.bottom+8)
+        y = Math.min(viewportHeight-140,resources.bottom+10);
+      // Stop above a corner box (Mission Overview, Orbit Map) in the same column.
+      let floor = viewportHeight-12;
+      for (const id of ["map-widget","orbit-map-widget"]) {
+        const corner = document.getElementById(id);
+        const box = corner && !corner.hidden ? corner.getBoundingClientRect() : null;
+        if (box?.width && x < box.right+8 && x+panelWidth > box.left-8 && box.top > y+140) floor = Math.min(floor,box.top-10);
+      }
+      panel.style.maxHeight = Math.max(100,floor-y)+"px";
       Object.assign(panel.style,{left:x+"px",top:y+"px"});
       entry.position = null;
       return true;

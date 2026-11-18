@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { hudButton } from "./support/hud.js";
 
 let flight;
 
@@ -29,7 +30,7 @@ for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: width === 390 ? 730 : 800 });
     await page.route(url => url.pathname === "/flight", route => route.fulfill({ contentType: "text/html", body: flight }));
     await page.goto("/flight?view=replay");
-    const crew = page.getByRole("button", { name: "Crew roster" });
+    const crew = await hudButton(page, "Crew roster");
     await expect(crew).toBeVisible();
     await crew.click();
     const roster = page.locator("#crew-widget");

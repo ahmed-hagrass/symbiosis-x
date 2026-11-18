@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { startBackend, stopBackend, useBackend } from "./support/backend.js";
+import { hudButton } from "./support/hud.js";
 
 test("Flight compares optional exercise and shows the recorded deferral outcome", async ({ page, request }) => {
   const output = mkdtempSync(join(tmpdir(),"sx-exercise-flight-"));
@@ -35,7 +36,7 @@ test("Flight compares optional exercise and shows the recorded deferral outcome"
     };
     await advance(0,9);
     await page.goto("/flight?view=replay&run_id="+run);
-    await page.getByRole("button",{name:"Workflows",exact:true}).click();
+    await (await hudButton(page, "Workflows")).click();
     const panel = page.getByRole("region",{name:"Exercise schedule · synthetic"});
     await expect(panel).toContainText("Keep exercise · Eligible");
     await expect(panel).toContainText("3200 ppm");

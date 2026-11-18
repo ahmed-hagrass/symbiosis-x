@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { hudButton } from "./support/hud.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 let outputDirectory;
@@ -32,13 +33,13 @@ test("End mission stops the replay, summarizes it and starts fresh", async ({ pa
   await expect(clock).toContainText("02:00:00");
 
   // Backing out keeps the flight where it was.
-  await page.getByRole("button", { name: "End mission", exact: true }).first().click();
+  await (await hudButton(page, "End mission")).click();
   await expect(dialog.getByRole("heading", { name: "End this mission?" })).toBeVisible();
   await dialog.getByRole("button", { name: "Keep flying" }).click();
   await expect(dialog).toBeHidden();
   await expect(clock).toContainText("02:00:00");
 
-  await page.locator("#end-mission").click();
+  await (await hudButton(page, "#end-mission")).click();
   await dialog.getByRole("button", { name: "End mission" }).click();
   await expect(dialog.getByRole("heading", { name: "Mission ended" })).toBeVisible();
   const facts = dialog.locator("#end-mission-facts");
@@ -54,7 +55,7 @@ test("End mission stops the replay, summarizes it and starts fresh", async ({ pa
   await expect(clock).toContainText("00:00");
   await expect(page).toHaveURL(/view=replay/);
 
-  await page.locator("#end-mission").click();
+  await (await hudButton(page, "#end-mission")).click();
   await dialog.getByRole("button", { name: "End mission" }).click();
   await dialog.getByRole("button", { name: "Back to game menu" }).click();
   await expect(page.getByRole("heading", { name: "SYMBIOSIS X", exact: true })).toBeVisible();

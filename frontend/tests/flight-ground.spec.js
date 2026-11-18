@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { hudButton } from "./support/hud.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const python = process.env.SX_TEST_PYTHON || "python3";
@@ -53,7 +54,7 @@ test("offline ISS replay keeps Ground telemetry delayed and uses the existing in
   await expect(groundField(ground, "power")).toHaveText("0.60 kW");
   await overview.getByRole("button", {name:"Systems"}).click();
   await expect(overview.getByRole("region",{name:"Ship systems"}).locator("[data-system=power] output")).toHaveText("0.20 kW");
-  await page.getByRole("button", {name:"Orders", exact:true}).click();
+  await (await hudButton(page, "Orders")).click();
   await page.getByRole("button", {name:"Commander · Assign Ivo"}).click();
   await page.locator("#timeline").fill("825");
   await page.getByRole("button", {name:"Ivo · Send inspection report"}).click();
@@ -172,7 +173,7 @@ test("Flight shows Ground pending at 13:00 while the same-run Crew receipt is he
     await expect(groundField(ground, "power")).toHaveText("0.60 kW");
     await expect(groundField(ground, "advice")).toHaveAttribute("data-state", "pending");
 
-    await page.getByRole("button", {name:"Orders", exact:true}).click();
+    await (await hudButton(page, "Orders")).click();
     const receipt = page.locator("#flight-crew-receipt");
     await expect(receipt).toHaveText("Stale · held onboard at T+13:00 · Crew clock T+13:00");
     await expect(receipt).toHaveAttribute("data-state", "stale");
@@ -222,7 +223,7 @@ test("a saved Horizon direction holds departure until its verified report reache
 
   await groundTab(page).click();
   await expect(ground).toContainText("ISS transfer requires a readiness report");
-  await button("Flight command").click();
+  await (await hudButton(page, "Flight command")).click();
   await button("Coast to ISS departure window").click();
   const transfer = button("Commit ISS transfer burn");
   await expect(transfer).toBeDisabled();
@@ -231,7 +232,7 @@ test("a saved Horizon direction holds departure until its verified report reache
 
   await issue.click();
   await expect(ground).toContainText(/Simulated Ground · Flight Director.*Sent T\+.*Uplink due T\+/);
-  await button("Orders").click();
+  await (await hudButton(page, "Orders")).click();
   await expect(orders).toContainText("No direction delivered yet.");
   await advance(3);
   await expect(orders).toContainText(/Received onboard T\+.*Fresh.*Deadline/);
@@ -279,7 +280,7 @@ test("a saved Horizon direction holds departure until its verified report reache
   await page.goto("/flight?view=launch");
   await groundTab(page).click();
   await expect(ground).toContainText("Ground received readiness verified");
-  await button("Flight command").click();
+  await (await hudButton(page, "Flight command")).click();
   await expect(transfer).toBeEnabled();
 });
 

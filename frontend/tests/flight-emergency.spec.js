@@ -5,6 +5,7 @@ import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {expect, test} from "@playwright/test";
 import {startBackend, stopBackend, useBackend} from "./support/backend.js";
+import { hudButton } from "./support/hud.js";
 
 test("Flight opens and acknowledges both local drills with sourced guidance", async ({page, request}) => {
   const directory = mkdtempSync(join(tmpdir(),"flight-emergency-"));
@@ -25,7 +26,7 @@ test("Flight opens and acknowledges both local drills with sourced guidance", as
     await useBackend(page,backend.origin);
     await page.route(url => url.pathname === "/flight",route => route.fulfill({contentType:"text/html",body:flight}));
     await page.goto("/flight?view=replay&run_id=" + runId);
-    await page.getByRole("button",{name:"Emergency Assist",exact:true}).click();
+    await (await hudButton(page, "Emergency Assist")).click();
     const panel = page.getByRole("dialog",{name:"Emergency Assist"});
     const steps = panel.getByRole("list",{name:"Onboard training steps"});
     await panel.getByLabel("Is the crew member responsive?").selectOption("yes");

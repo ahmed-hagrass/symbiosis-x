@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { startBackend, stopBackend, useBackend } from "./support/backend.js";
+import { hudButton } from "./support/hud.js";
 
 test("Ground sees the delivered operational outcome only", async ({ page, request }) => {
   const directory = mkdtempSync(join(tmpdir(),"sx-wearable-debrief-"));
@@ -43,7 +44,7 @@ test("Ground sees the delivered operational outcome only", async ({ page, reques
     await send(task,"crew",{action:"record",observer_id:"SIM-03"});
     await advance(8,10);
     await page.goto("/flight?view=replay&run_id="+started.run_id);
-    await page.getByRole("button",{name:"Workflows",exact:true}).click();
+    await (await hudButton(page, "Workflows")).click();
     await page.getByRole("button",{name:"Commander · Defer exercise"}).click();
     await advance(10,11);
     await page.getByRole("button",{name:"Refresh schedule evidence"}).click();
@@ -68,7 +69,7 @@ test("Ground sees the delivered operational outcome only", async ({ page, reques
     expect((await request.get(api+run+"/crew/wearable-debrief",{headers:auth("ground")})).status()).toBe(403);
 
     await page.goto("/flight?view=replay&run_id="+started.run_id);
-    await page.getByRole("button",{name:"Workflows",exact:true}).click();
+    await (await hudButton(page, "Workflows")).click();
     await expect(debrief).toContainText("Ground delivery lag · 45 s");
     await expect(debrief).toContainText("Ground operational update · T+04:15");
   } finally {
